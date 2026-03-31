@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Dashboard</title>
+
+<!-- Bootstrap -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body {
+    background-color: #f5f7fa;
+}
+
+.card-title {
+    font-size: 16px;
+    color: gray;
+}
+
+.card-value {
+    font-size: 28px;
+    font-weight: bold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- ✅ NAVBAR -->
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+
+<div class="container-fluid">
+
+<a class="navbar-brand" href="/">
+Typing Practice
+</a>
+
+<div>
+
+<a class="btn btn-light me-2" href="/">
+Typing
+</a>
+
+<a class="btn btn-light me-2" href="/profile/">
+Profile
+</a>
+
+<a class="btn btn-light me-2" href="/history/">
+History
+</a>
+
+<a class="btn btn-light me-2" href="/leaderboard/">
+Leaderboard
+</a>
+
+<a class="btn btn-danger" href="/logout/">
+Logout
+</a>
+
+</div>
+
+</div>
+
+</nav>
+
+
+<div class="container mt-4">
+
+<h2 class="text-center mb-4">
+
+📊 Typing Dashboard
+
+</h2>
+
+
+<!-- Stats Cards -->
+
+<div class="row text-center mb-4">
+
+<div class="col-md-3">
+
+<div class="card shadow-sm p-3">
+
+<div class="card-title">
+Total Tests
+</div>
+
+<div class="card-value">
+{{ total_tests }}
+</div>
+
+</div>
+
+</div>
+
+
+<div class="col-md-3">
+
+<div class="card shadow-sm p-3">
+
+<div class="card-title">
+Best WPM
+</div>
+
+<div class="card-value">
+{{ best_wpm }}
+</div>
+
+</div>
+
+</div>
+
+
+<div class="col-md-3">
+
+<div class="card shadow-sm p-3">
+
+<div class="card-title">
+Average WPM
+</div>
+
+<div class="card-value">
+{{ avg_wpm }}
+</div>
+
+</div>
+
+</div>
+
+
+<div class="col-md-3">
+
+<div class="card shadow-sm p-3">
+
+<div class="card-title">
+Latest Accuracy
+</div>
+
+<div class="card-value">
+{{ latest_accuracy }}%
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- Charts Section -->
+
+<div class="card shadow-sm p-4 mb-4">
+
+<h5 class="mb-3">
+
+📈 WPM Progress
+
+</h5>
+
+<canvas id="wpmChart"></canvas>
+
+</div>
+
+
+<div class="card shadow-sm p-4 mb-4">
+
+<h5 class="mb-3">
+
+🎯 Accuracy Progress
+
+</h5>
+
+<canvas id="accuracyChart"></canvas>
+
+</div>
+
+
+<div class="card shadow-sm p-4 mb-4">
+
+<h5 class="mb-3">
+
+📅 WPM vs Date
+
+</h5>
+
+<canvas id="wpmDateChart"></canvas>
+
+</div>
+
+
+</div>
+
+
+<!-- WPM Chart -->
+
+<script>
+
+var wpmData = {{ wpm_data|safe }};
+
+var labels = [];
+
+for(var i=0;i<wpmData.length;i++){
+labels.push("Test " + (i+1));
+}
+
+var ctx = document.getElementById('wpmChart').getContext('2d');
+
+new Chart(ctx, {
+
+type: 'line',
+
+data: {
+
+labels: labels,
+
+datasets: [{
+
+label: 'WPM Progress',
+
+data: wpmData,
+
+borderWidth: 2
+
+}]
+
+},
+
+options: {
+
+responsive: true,
+
+scales: {
+
+y: {
+
+beginAtZero: true
+
+}
+
+}
+
+}
+
+});
+
+</script>
+
+
+<!-- Accuracy Chart -->
+
+<script>
+
+var accuracyData = {{ accuracy_data|safe }};
+
+var accuracyLabels = [];
+
+for (var i = 0; i < accuracyData.length; i++) {
+
+accuracyLabels.push("Test " + (i + 1));
+
+}
+
+var ctx2 = document.getElementById('accuracyChart').getContext('2d');
+
+new Chart(ctx2, {
+
+type: 'line',
+
+data: {
+
+labels: accuracyLabels,
+
+datasets: [{
+
+label: 'Accuracy Progress (%)',
+
+data: accuracyData,
+
+borderWidth: 2
+
+}]
+
+},
+
+options: {
+
+responsive: true,
+
+scales: {
+
+y: {
+
+beginAtZero: true,
+
+max: 100
+
+}
+
+}
+
+}
+
+});
+
+
+<!--    wpm chart-->
+<script>
+    // Get wpm data from django
+    var wpmData = {{ wpm_data|safe }};
+
+    // Create labels (Test 1, Test 2...)
+    var labels = [];
+
+    for(var i=0;i<wpmData.length;i++){
+        labels.push("Test " + (i+1));
+    }
+
+    // Create Chart
+    var ctx = document.getElementById('wpmChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'WPM Progress',
+                data: wpmData,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+    <!--    accuracy chart-->
+<script>
+
+    // Get Accuracy data
+    var accuracyData = {{ accuracy_data|safe }};
+
+    // Create labels
+    var accuracyLabels = [];
+    for (var i = 0; i < accuracyData.length; i++) {
+        accuracyLabels.push("Test " + (i + 1));
+    }
+
+    // Create Accuracy chart
+    var ctx2 = document.getElementById('accuracyChart').getContext('2d');
+
+    new Chart(ctx2, {
+        type: 'line',
+        data: {
+            labels: accuracyLabels,
+            datasets: [{
+                label: 'Accuracy Progress (%)',
+                data: accuracyData,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+
+</script>
+
+<!--    wpm date chart-->
+<script>
+
+// Get data
+var wpmDataDate = {{ wpm_data|safe }};
+var dateLabels = {{ date_labels|safe }};
+
+// Create chart
+var ctx3 = document.getElementById('wpmDateChart').getContext('2d');
+
+new Chart(ctx3, {
+    type: 'line',
+    data: {
+        labels: dateLabels,
+        datasets: [{
+            label: 'WPM vs Date',
+            data: wpmDataDate,
+            borderWidth: 2
+        }]
+    },
+
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+</script>
+</body>
+
+</html>

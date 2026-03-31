@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Typing Practice</title>
+
+<!-- Bootstrap -->
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+
+.correct {
+    color: green;
+}
+
+.wrong {
+    color: red;
+}
+
+body {
+    background-color: #f5f7fa;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- ✅ NAVBAR -->
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+
+<div class="container-fluid">
+
+<a class="navbar-brand" href="/">
+Typing Practice
+</a>
+
+<div>
+
+<a class="btn btn-light me-2" href="/dashboard/">
+Dashboard
+</a>
+
+<a class="btn btn-light me-2" href="/history/">
+History
+</a>
+
+<a class="btn btn-light me-2" href="/profile/">
+Profile
+</a>
+
+<a class="btn btn-light me-2" href="/leaderboard/">
+Leaderboard
+</a>
+
+<a class="btn btn-danger" href="{% url 'logout' %}">
+Logout
+</a>
+
+</div>
+
+</div>
+
+</nav>
+
+
+<div class="container mt-4">
+
+
+<!-- Difficulty + Timer Card -->
+
+<div class="card shadow-sm p-4 mb-4">
+
+<h4 class="mb-3">Test Settings</h4>
+
+<input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+
+
+<div class="row">
+
+<div class="col-md-4">
+
+<label class="form-label">
+Select Difficulty
+</label>
+
+<select id="difficultySelect"
+class="form-select">
+
+<option value="easy">Easy</option>
+
+<option value="medium">Medium</option>
+
+<option value="hard">Hard</option>
+
+</select>
+
+</div>
+
+
+<div class="col-md-4">
+
+<label class="form-label">
+Select Duration
+</label>
+
+<select id="timeSelect"
+class="form-select">
+
+<option value="120">
+2 Minutes
+</option>
+
+<option value="300">
+5 Minutes
+</option>
+
+<option value="custom">
+Custom
+</option>
+
+</select>
+
+</div>
+
+
+<div class="col-md-4">
+
+<label class="form-label">
+Custom Seconds
+</label>
+
+<input
+type="number"
+id="customTime"
+class="form-control"
+placeholder="Enter seconds"
+style="display:none;"
+>
+
+</div>
+
+</div>
+
+<div class="mt-3">
+
+<button
+class="btn btn-primary"
+onclick="loadPassage()">
+
+Load Passage
+
+</button>
+
+<button
+class="btn btn-success ms-2"
+onclick="startTest()">
+
+Start Test
+
+</button>
+
+<button
+class="btn btn-danger ms-2"
+onclick="stopTest()">
+
+Stop Test
+
+</button>
+
+</div>
+
+</div>
+
+
+<!-- Timer -->
+
+<div class="alert alert-info text-center">
+
+<h5>
+
+Time Left:
+<span id="timer">120</span>
+seconds
+
+</h5>
+
+</div>
+
+
+<!-- Passage Area -->
+
+<div class="card shadow-sm p-4 mb-4">
+
+<h5>Type the following text:</h5>
+
+<p
+id="passage"
+class="border p-3 bg-light">
+
+</p>
+
+<textarea
+
+id="inputText"
+
+rows="8"
+
+class="form-control"
+
+placeholder="Start typing here..."
+
+></textarea>
+
+</div>
+
+
+<!-- Stats -->
+
+<div class="row text-center">
+
+<div class="col-md-4">
+
+<div class="card p-3">
+
+<h5>Errors</h5>
+
+<h3 id="errors">0</h3>
+
+</div>
+
+</div>
+
+
+<div class="col-md-4">
+
+<div class="card p-3">
+
+<h5>WPM</h5>
+
+<h3 id="wpm">0</h3>
+
+</div>
+
+</div>
+
+
+<div class="col-md-4">
+
+<div class="card p-3">
+
+<h5>Accuracy</h5>
+
+<h3>
+
+<span id="accuracy">100</span>%
+
+</h3>
+
+</div>
+
+</div>
+
+</div>
+
+
+</div>
+
+<script>
+let timer;
+let interval;
+let timerStarted = false;
+let totalTime;
+let errors = 0;
+let csrfToken = document.getElementById("csrfToken").value;
+
+
+// Elements
+
+let timerElement =
+    document.getElementById("timer");
+
+let passageElement =
+    document.getElementById("passage");
+
+let inputElement =
+    document.getElementById("inputText");
+
+let errorElement =
+    document.getElementById("errors");
+
+let wpmElement =
+    document.getElementById("wpm");
+
+let accuracyElement =
+    document.getElementById("accuracy");
+
+let timeSelect =
+    document.getElementById("timeSelect");
+
+let customTimeInput =
+    document.getElementById("customTime");
+
+
+
+// Disable typing initially
+
+inputElement.disabled = true;
+
+
+
+// Show custom time input
+
+timeSelect.addEventListener(
+"change",
+function () {
+
+    if (timeSelect.value === "custom") {
+
+        customTimeInput.style.display =
+            "inline";
+
+    }
+    else {
+
+        customTimeInput.style.display =
+            "none";
+    }
+
+});
+
+
+
+// Load passage characters
+
+let text =
+"{{ passage.text|escapejs }}";
+
+function loadPassage() {
+
+    passageElement.innerHTML = "";
+
+    for (let char of text) {
+
+        let span =
+        document.createElement("span");
+
+        span.innerText = char;
+
+        passageElement.appendChild(span);
+    }
+}
+
+loadPassage();
+
+
+
+// Start Test
+
+function startTest() {
+
+    if (timeSelect.value === "custom") {
+
+        totalTime =
+        parseInt(customTimeInput.value);
+
+        if (!totalTime) {
+
+            alert("Enter custom time");
+
+            return;
+        }
+
+    }
+    else {
+
+        totalTime =
+        parseInt(timeSelect.value);
+    }
+
+    timer = totalTime;
+
+    timerElement.innerText = timer;
+
+    inputElement.disabled = false;
+
+    inputElement.value = "";
+
+    errors = 0;
+
+    errorElement.innerText = 0;
+
+    wpmElement.innerText = 0;
+
+    accuracyElement.innerText = 100;
+
+    timerStarted = false;
+
+}
+
+
+
+// Stop Test
+
+function stopTest() {
+
+    clearInterval(interval);
+
+    inputElement.disabled = true;
+
+    calculateFinalResult();
+}
+
+
+
+// Start timer when typing begins
+
+inputElement.addEventListener(
+"input",
+function () {
+
+    if (!timerStarted) {
+
+        timerStarted = true;
+
+        interval =
+        setInterval(updateTimer, 1000);
+    }
+
+    checkTyping();
+});
+
+
+
+// Timer countdown
+
+function updateTimer() {
+
+    timer--;
+
+    timerElement.innerText = timer;
+
+    if (timer <= 0) {
+
+        clearInterval(interval);
+
+        inputElement.disabled = true;
+
+        calculateFinalResult();
+    }
+}
+
+
+
+// Typing validation
+
+function checkTyping() {
+
+    let typedText =
+        inputElement.value;
+
+    let spans =
+        passageElement.querySelectorAll("span");
+
+    errors = 0;
+
+    spans.forEach(
+    function(span, index) {
+
+        let typedChar =
+            typedText[index];
+
+        if (typedChar == null) {
+
+            span.classList.remove("correct");
+            span.classList.remove("wrong");
+
+        }
+        else if (
+            typedChar === span.innerText
+        ) {
+
+            span.classList.add("correct");
+            span.classList.remove("wrong");
+
+        }
+        else {
+
+            span.classList.add("wrong");
+            span.classList.remove("correct");
+
+            errors++;
+        }
+
+    });
+
+    errorElement.innerText =
+        errors;
+
+    calculateStats();
+}
+
+
+
+// Live WPM & Accuracy
+
+function calculateStats() {
+
+    let typedLength =
+        inputElement.value.length;
+
+    let correctChars =
+        typedLength - errors;
+
+    let timeElapsed =
+        totalTime - timer;
+
+    if (timeElapsed > 0) {
+
+        let minutes =
+            timeElapsed / 60;
+
+        let wpm =
+            ((correctChars / 5)
+            / minutes);
+
+        wpmElement.innerText =
+            Math.max(
+                0,
+                Math.round(wpm)
+            );
+
+        let accuracy =
+            (correctChars /
+            typedLength) * 100;
+
+        if (!isNaN(accuracy)) {
+
+            accuracyElement.innerText =
+                Math.round(accuracy);
+        }
+    }
+
+}
+
+
+
+// Final result save
+
+function calculateFinalResult() {
+
+    let typedLength =
+        inputElement.value.length;
+
+    let correctChars =
+        typedLength - errors;
+
+    let minutes =
+        totalTime / 60;
+
+    let wpm =
+        ((correctChars / 5)
+        / minutes);
+
+    let accuracy =
+        (correctChars /
+        typedLength) * 100;
+
+
+
+fetch("/save-result/", {
+
+    method: "POST",
+
+    headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken
+    },
+
+    body: JSON.stringify({
+
+        duration: totalTime,
+
+        total_chars: typedLength,
+
+        correct_chars: correctChars,
+
+        errors: errors,
+
+        wpm: Math.round(wpm),
+
+        accuracy: Math.round(accuracy)
+
+    })
+
+})
+
+.then(response => response.json())
+
+.then(data => {
+
+    alert(
+        "Test Completed!\n" +
+        "WPM: " +
+        Math.round(wpm) +
+        "\nAccuracy: " +
+        Math.round(accuracy) + "%"
+    );
+
+});
+
+}
+
+</script>
+<script>
+
+function loadPassage() {
+
+    var difficulty = document.getElementById(
+        "difficultySelect"
+    ).value;
+
+    window.location.href = "/?difficulty=" + difficulty;
+
+}
+
+</script>
+</body>
+</html>
