@@ -18,7 +18,9 @@ class TypingRecord(models.Model):
 
     wpm = models.FloatField()
     accuracy = models.FloatField()
-
+    original_text = models.TextField(null=True, blank=True)
+    typed_text = models.TextField(null=True, blank=True)
+    ai_feedback = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

@@ -10,6 +10,8 @@ from .models import TypingRecord
 from django.contrib.auth.decorators import login_required
 from django.db.models import Avg, Max
 
+from .utils.ai_helper import analyze_typing_errors
+
 # Create your views here.
 @login_required
 def typing_test(request):
@@ -46,6 +48,14 @@ def typing_test(request):
 def save_result(request):
     if request.method == "POST":
         data = json.loads(request.body)
+
+        # Get original + typed text
+        original_text = data.get("original_text", "")
+        typed_text = data.get("typed_text", "");
+
+        # call AI
+        ai_feedback = analyze_typing_errors(original_text, typed_text)
+
         TypingRecord.objects.create(
             user=request.user,  # it's important as it connect records to logged-in user
             duration=data['duration'],
@@ -54,10 +64,20 @@ def save_result(request):
 
             errors=data['errors'],
             wpm=data['wpm'],
-            accuracy=data['accuracy']
+            accuracy=data['accuracy'],
+
+            # new
+            original_text=original_text,
+            typed_text=typed_text,
+            ai_feedback=ai_feedback
         )
 
-        return JsonResponse({"status": "success"})
+        return JsonResponse(
+            {
+                "status": "success",
+                "ai_feedback": ai_feedback
+            }
+        )
 
 
 @login_required

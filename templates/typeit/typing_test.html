@@ -407,7 +407,7 @@ function startTest() {
 // Stop Test
 
 function stopTest() {
-
+<!--    alert("Stop clicked");-->
     clearInterval(interval);
 
     inputElement.disabled = true;
@@ -559,16 +559,23 @@ function calculateFinalResult() {
     let correctChars =
         typedLength - errors;
 
+    let timeUsed = totalTime - timer;
+    if(timeUsed <= 0){
+        timeUsed=1;
+    }
+
     let minutes =
-        totalTime / 60;
+        timeUsed / 60;
 
     let wpm =
         ((correctChars / 5)
         / minutes);
 
-    let accuracy =
-        (correctChars /
-        typedLength) * 100;
+    let accuracy = 0;
+
+    if(typedLength > 0){
+        accuracy = (correctChars / typedLength)*100;
+    }
 
 
 
@@ -582,19 +589,15 @@ fetch("/save-result/", {
     },
 
     body: JSON.stringify({
-
-        duration: totalTime,
-
+        duration: timeUsed,
         total_chars: typedLength,
-
         correct_chars: correctChars,
-
         errors: errors,
-
         wpm: Math.round(wpm),
+        accuracy: Math.round(accuracy),
 
-        accuracy: Math.round(accuracy)
-
+        original_text: passageElement.innerText,
+        typed_text: inputElement.value
     })
 
 })
