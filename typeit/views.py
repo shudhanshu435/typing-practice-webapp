@@ -10,7 +10,7 @@ from .models import TypingRecord
 from django.contrib.auth.decorators import login_required
 from django.db.models import Avg, Max
 
-from .utils.ai_helper import analyze_typing_errors
+from .utils.ai_helper import analyze_typing_errors, generate_ai_paragraph
 
 # Create your views here.
 @login_required
@@ -206,3 +206,13 @@ def leaderboard(request):
     }
 
     return render(request, 'typeit/leaderboard.html', context)
+
+@login_required
+def generate_passage(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        difficulty = data.get("difficulty", "easy")
+        topic = data.get("topic", "general")
+        # Call AI
+        paragraph = generate_ai_paragraph(difficulty, topic)
+        return JsonResponse({"passage": paragraph})

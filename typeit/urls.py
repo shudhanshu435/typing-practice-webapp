@@ -9,4 +9,5 @@ urlpatterns = [
     path('dashboard/', dashboard, name='dashboard'),
     path('profile/', profile, name='profile'),
     path('leaderboard/', leaderboard, name='leaderboard'),
+    path('generate-passage/', generate_passage, name="generate_passage"),
 ]
